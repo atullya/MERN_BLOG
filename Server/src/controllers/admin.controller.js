@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 
 export const uploadImage = async (req, res) => {
   try {
-    // Check if file is missing in the request object
+   
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -18,7 +18,7 @@ export const uploadImage = async (req, res) => {
       });
     }
 
-    // Extract image title and description from the request body
+   
     const { imageTitle, imageDescription } = req.body;
 
     // Check if title and description are available

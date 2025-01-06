@@ -7,6 +7,7 @@ import Comments from "./Dashboard/Comments";
 import { Link } from "react-router-dom";
 import Users from "./Dashboard/Users";
 import Logout from "./Dashboard/Logout";
+import Quotes from "./APIPages/Quotes";
 function SideBar({ userdata }) {
   return (
     <div className="flex justify-center  gap-10">
@@ -45,7 +46,8 @@ function SideBar({ userdata }) {
         </div>
       </aside>
       <div className="mt-2 p-9 ">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam
+        <Quotes/>
+        {/* Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam
         asperiores nulla maiores fuga nam atque magnam totam labore nostrum
         facilis sequi vero delectus saepe mollitia minus dolorum cum molestiae
         consectetur unde voluptates nihil, sunt repellat fugiat. Quis
@@ -55,7 +57,7 @@ function SideBar({ userdata }) {
         necessitatibus possimus ab perspiciatis nulla ea illum consequatur sequi
         nisi, praesentium earum? Sunt quos id, earum sapiente nulla nihil
         deserunt cum eum voluptatibus possimus, esse non quam, architecto
-        aperiam. Id eligendi debitis illum ullam earum?
+        aperiam. Id eligendi debitis illum ullam earum? */}
       </div>
     </div>
   );
