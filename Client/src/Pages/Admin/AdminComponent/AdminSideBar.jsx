@@ -2,6 +2,7 @@ import React from "react";
 import { FaHome, FaUser, FaBlog, FaSignOutAlt, FaBars } from "react-icons/fa";
 import logo1 from "../../../assets/logo1.jpg";
 import { Link } from "react-router-dom";
+import AdminLogout from "./AdminLogout";
 
 const AdminSideBar = ({ isOpen, setIsOpen }) => {
   return (
@@ -78,19 +79,7 @@ const AdminSideBar = ({ isOpen, setIsOpen }) => {
                 </a>
               </li>
             </Link>
-            <li>
-              <a
-                href="#"
-                className="flex items-center px-4 py-3 bg-[#1F1E48] bg-opacity-25 rounded-lg hover:bg-opacity-50 transition-all duration-300"
-              >
-                <FaSignOutAlt size={20} />
-                <span
-                  className={`ml-4 text-sm font-medium ${!isOpen && "hidden"}`}
-                >
-                  Logout
-                </span>
-              </a>
-            </li>
+            <AdminLogout isOpen={isOpen} />
           </ul>
         </nav>
         <div className="px-4 py-4 border-t border-purple-400">
@@ -99,7 +88,7 @@ const AdminSideBar = ({ isOpen, setIsOpen }) => {
               !isOpen && "hidden"
             } transition-opacity duration-300`}
           >
-            © 2024 MyApp. All Rights Reserved.
+            ©2025 WriteOn. All Rights Reserved.
           </p>
         </div>
       </div>
