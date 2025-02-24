@@ -64,13 +64,30 @@ const BlogDetails = () => {
     }
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = (e, id) => {
     e.preventDefault();
-    if (newComment.trim()) {
-      setComments([...comments, newComment]);
-      setNewComment("");
-      // Optional: Send the comment to the server
-      // axios.post(`${BASE_URL}/api/blog/comment/${id}`, { comment: newComment });
+    commentHandler(id);
+  };
+  let commentHandler = async (id) => {
+    try {
+      const res = await axios.patch(
+        `${BASE_URL}/api/blog/comment/${id}`,
+        {
+          comment: newComment,
+        },
+        { withCredentials: true }
+      );
+      console.log(res.data);
+      if (res.data.success) {
+        if (newComment.trim()) {
+          setComments([...comments, newComment]);
+          setNewComment("");
+          // Optional: Send the comment to the server
+          // axios.post(`${BASE_URL}/api/blog/comment/${id}`, { comment: newComment });
+        }
+      }
+    } catch (error) {
+      console.error("Error commenting on the blog:", error);
     }
   };
 
@@ -150,8 +167,17 @@ const BlogDetails = () => {
           <ul className="space-y-4">
             {comments.length > 0 ? (
               comments.map((comment, index) => (
-                <li key={index} className="bg-gray-100 p-3 rounded-lg">
-                  {comment}
+                <li
+                  key={comment._id || index}
+                  className="bg-gray-100 p-3 rounded-lg"
+                >
+                  <p className="font-medium">
+                    {comment.user?.username || "Anonymous"}:
+                  </p>
+                  <p>{comment.comment}</p>
+                  <span className="text-xs text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </span>
                 </li>
               ))
             ) : (
@@ -160,7 +186,10 @@ const BlogDetails = () => {
           </ul>
 
           {/* Add Comment */}
-          <form className="mt-4 flex" onSubmit={handleCommentSubmit}>
+          <form
+            className="mt-4 flex"
+            onSubmit={(e) => handleCommentSubmit(e, blog._id)}
+          >
             <input
               type="text"
               className="flex-grow border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
