@@ -1,5 +1,5 @@
 import Blog from "../models/blog.model.js";
-import User from "../models/user.model.js"
+import User from "../models/user.model.js";
 import Image from "../models/image.model.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -45,24 +45,29 @@ export const uploadBlog = async (req, res) => {
     const uploadedBlog = await newBlog.save();
 
     if (!uploadedBlog) {
-      return res.status(500).json({ success: false, message: "Blog upload failed!" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Blog upload failed!" });
     }
 
-    return res.status(201).json({ success: true, message: "Blog uploaded successfully!" });
+    return res
+      .status(201)
+      .json({ success: true, message: "Blog uploaded successfully!" });
   } catch (error) {
     console.error("Error uploading blog:", error);
-    return res.status(500).json({ success: false, message: "Internal server error while uploading blog." });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while uploading blog.",
+    });
   }
 };
 
-
-
-
-
 export const viewAvailableAllBlog = async (req, res) => {
   try {
-    if(req.query.search){
-      const getAllAvailableBlog = await Blog.find({title: { $regex: req.query.search, $options: "i" }});
+    if (req.query.search) {
+      const getAllAvailableBlog = await Blog.find({
+        title: { $regex: req.query.search, $options: "i" },
+      });
       if (!getAllAvailableBlog || getAllAvailableBlog.length === 0) {
         return res.status(200).json({ message: "No Blog Available" });
       }
@@ -176,10 +181,13 @@ export const getBlogById = async (req, res) => {
 export const likeBlog = async (req, res) => {
   try {
     const blogId = req.params.id;
-    const userId = req.user._id; // Assume user ID is added to `req.user` by authentication middleware
+    const userId = req.user._id; // Assume user ID is available in `req.user`
 
     // Find the blog
-    const blog = await Blog.findById(blogId);
+    const blog = await Blog.findById(blogId).populate(
+      "likedBy",
+      "username email"
+    );
 
     // If blog is not found
     if (!blog) {
@@ -190,35 +198,52 @@ export const likeBlog = async (req, res) => {
     }
 
     // Check if the user has already liked the blog
-    if (blog.likedBy.includes(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already liked this blog.",
+    const userIndex = blog.likedBy.findIndex(
+      (user) => user._id.toString() === userId.toString()
+    );
+
+    if (userIndex !== -1) {
+      // User already liked → Unlike (remove user from likedBy array)
+      blog.likedBy.splice(userIndex, 1);
+      blog.likes -= 1;
+      await blog.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Blog unliked successfully!",
+        updatedLikes: blog.likes,
+        allLikedUsers: blog.likedBy, // Updated likedBy list
+      });
+    } else {
+      // User hasn't liked → Like (add user to likedBy array)
+      blog.likedBy.push(userId);
+      blog.likes += 1;
+      await blog.save();
+
+      // Populate likedBy field again to get user details
+      const updatedBlog = await Blog.findById(blogId).populate(
+        "likedBy",
+        "username email"
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Blog liked successfully!",
+        updatedLikes: updatedBlog.likes,
+        allLikedUsers: updatedBlog.likedBy,
       });
     }
-
-    // Add user ID to the likedBy array and increment the likes count
-    blog.likedBy.push(userId);
-    blog.likes += 1;
-    await blog.save();
-
-    // Return the updated blog
-    return res.status(200).json({
-      success: true,
-      message: "Blog liked successfully!",
-      blog,
-    });
   } catch (error) {
-    console.error("Error while liking the blog:", error);
+    console.error("Error while liking/unliking the blog:", error);
 
-    // Return error response
     return res.status(500).json({
       success: false,
-      message: "An error occurred while liking the blog.",
+      message: "An error occurred while liking/unliking the blog.",
       error: error.message,
     });
   }
 };
+
 export const addComment = async (req, res) => {
   try {
     const blogId = req.params.id;
@@ -299,7 +324,7 @@ export const incrementViewCount = async (req, res) => {
   }
 };
 
-export const editProfile=async (req,res)=>{
+export const editProfile = async (req, res) => {
   try {
     const userId = req.user._id; // Assuming user ID comes from authentication middleware
     const { username, email } = req.body; // Extract new data from request body
@@ -368,7 +393,7 @@ export const editProfile=async (req,res)=>{
       error: error.message,
     });
   }
-}
+};
 
 export const changePassword = async (req, res) => {
   try {

@@ -6,23 +6,25 @@ import { BASE_URL } from "../../../App";
 
 const BlogDetails = () => {
   const { id } = useParams(); // Get blog ID from URL parameters
-  const [blog, setBlog] = useState(null); // State to store blog data
-  const [likes, setLikes] = useState(0); // State for likes
-  const [isLiked, setIsLiked] = useState(false); // Track if the blog is liked
-  const [comments, setComments] = useState([]); // State for comments
-  const [newComment, setNewComment] = useState(""); // State for new comment input
+  const [blog, setBlog] = useState(null);
+  const [likes, setLikes] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
-        const res = await axios.get(
-          `${BASE_URL}/api/blog/inv/${id}`
-        );
+        const res = await axios.get(`${BASE_URL}/api/blog/inv/${id}`, {
+          withCredentials: true,
+        });
+
         console.log("Fetched blog details:", res.data);
         if (res.data) {
           setBlog(res.data);
-          setLikes(res.data.likes || 0); // Initialize likes
-          setComments(res.data.comments || []); // Initialize comments
+          setLikes(res.data.likes || 0);
+          setIsLiked(res.data.isLiked || false); // Set isLiked correctly
+          setComments(res.data.comments || []);
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
@@ -32,12 +34,34 @@ const BlogDetails = () => {
     fetchBlogDetails();
   }, [id]);
 
-  const handleLike = () => {
-    // incrementLike()
-    setIsLiked(!isLiked);
-    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
-    // Optional: Send the like action to the server
-    // axios.post(`/api/blog/like/${id}`);
+  const handleLike = async () => {
+    try {
+      const newIsLiked = !isLiked;
+      const newLikesCount = newIsLiked ? likes + 1 : Math.max(likes - 1, 0); // Prevent negative likes
+
+      setIsLiked(newIsLiked);
+      setLikes(newLikesCount);
+
+      const res = await axios.patch(
+        `${BASE_URL}/api/blog/like/${id}`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setLikes(res.data.likes);
+        setIsLiked(res.data.isLiked);
+      } else {
+        // Revert state if the response is not successful
+        setIsLiked(isLiked);
+        setLikes(likes);
+      }
+    } catch (error) {
+      console.error("Error liking the blog:", error);
+      // Revert state on error
+      setIsLiked(isLiked);
+      setLikes(likes);
+    }
   };
 
   const handleCommentSubmit = (e) => {
@@ -46,7 +70,7 @@ const BlogDetails = () => {
       setComments([...comments, newComment]);
       setNewComment("");
       // Optional: Send the comment to the server
-      // axios.post(`/api/blog/comment/${id}`, { comment: newComment });
+      // axios.post(`${BASE_URL}/api/blog/comment/${id}`, { comment: newComment });
     }
   };
 
@@ -59,13 +83,17 @@ const BlogDetails = () => {
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
         {/* Blog Image and Title */}
         <div className="relative">
-          <img
-            src={`${BASE_URL}${blog.images[0]}`} // Add the base URL for the backend server
-            // Always include an alt text for accessibility
-            alt={blog.title}
-            className="w-full h-64 object-cover"
-          />
-
+          {blog.images && blog.images.length > 0 ? (
+            <img
+              src={`${BASE_URL}${blog.images[0]}`}
+              alt={blog.title}
+              className="w-full h-64 object-cover"
+            />
+          ) : (
+            <div className="w-full h-64 bg-gray-300 flex items-center justify-center text-gray-600">
+              No Image Available
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
           <h1 className="absolute bottom-4 left-4 text-3xl text-white font-bold">
             {blog.title}
@@ -75,12 +103,12 @@ const BlogDetails = () => {
         {/* Blog Content */}
         <div className="p-6">
           <p className="text-gray-500 mb-4">
-            By: <span className="font-medium">{blog.author.username}</span>
+            By: <span className="font-medium">{blog.author?.username}</span>
           </p>
           <p className="text-gray-800 text-lg leading-7">{blog.content}</p>
           <div className="mt-6">
             <span className="text-xs text-gray-500">
-              Tags: {blog.tags.join(", ")}
+              Tags: {blog.tags?.join(", ") || "No Tags"}
             </span>
           </div>
         </div>
@@ -105,7 +133,10 @@ const BlogDetails = () => {
           <button
             className="flex items-center space-x-2 text-gray-500 hover:text-gray-600"
             onClick={() =>
-              navigator.share({ title: blog.title, url: window.location.href })
+              navigator.share?.({
+                title: blog.title,
+                url: window.location.href,
+              })
             }
           >
             <FaShareAlt />

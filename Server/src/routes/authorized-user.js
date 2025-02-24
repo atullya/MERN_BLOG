@@ -26,9 +26,13 @@ authorizedRoutes.post(
 
 authorizedRoutes.get("/blogs/:id", authMiddleware, getBlogById);
 authorizedRoutes.get("/welcome", authMiddleware, welcomeUser);
-authorizedRoutes.get("/uploadedblog", authMiddleware,  getUploadedBlog);
-authorizedRoutes.get("/viewavailableblog", authMiddleware,  viewAvailableAllBlog);
-authorizedRoutes.get("/inv/:id", async (req, res) => {
+authorizedRoutes.get("/uploadedblog", authMiddleware, getUploadedBlog);
+authorizedRoutes.get(
+  "/viewavailableblog",
+  authMiddleware,
+  viewAvailableAllBlog
+);
+authorizedRoutes.get("/inv/:id", authMiddleware, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id).populate("author");
     res.json(blog);
@@ -37,8 +41,13 @@ authorizedRoutes.get("/inv/:id", async (req, res) => {
   }
 });
 
-authorizedRoutes.patch('/edit',authMiddleware,uploadMiddleware.single("image"),editProfile)
-authorizedRoutes.patch('/changepassword',authMiddleware,changePassword)
+authorizedRoutes.patch(
+  "/edit",
+  authMiddleware,
+  uploadMiddleware.single("image"),
+  editProfile
+);
+authorizedRoutes.patch("/changepassword", authMiddleware, changePassword);
 
 authorizedRoutes.delete("/remove/:id", authMiddleware, removeBlog);
 

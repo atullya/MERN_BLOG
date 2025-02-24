@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import HeroSection from "../../Component/HeroSection";
 import { FaSearch } from "react-icons/fa";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
 const Home = () => {
   const [blogs, setBlogs] = useState([]);
   const [authors, setAuthors] = useState([]);
@@ -9,38 +15,18 @@ const Home = () => {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState(""); // Search input state
   const homeRef = useRef(null); // Ref to scroll to the Home section
-  const [userdata, setUserdata] = useState(null);
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch("http://localhost:4000/api/blog/welcome", {
-          method: "GET",
-          credentials: "include",
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUserdata(data.user);
-        } else {
-          console.error("Failed to fetch user data");
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      }
-    };
-    fetchUser();
-  });
+  const blogsRef = useRef([]); // Ref for blog cards animation
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:4000/api/guest/allblogs"
-        );
+        const response = await fetch("http://localhost:4000/api/guest/allblogs");
         const data = await response.json();
         console.log("Fetched data:", data);
 
         if (data.success) {
           setBlogs(data.Blogs);
-          setAuthors(data.Authors); // Assuming Authors is an array of author data
+          setAuthors(data.Authors);
         } else {
           setError(data.message || "Failed to fetch data.");
         }
@@ -55,6 +41,29 @@ const Home = () => {
     fetchData();
   }, []);
 
+  // GSAP Scroll Animation for Blog Cards
+  useEffect(() => {
+    if (blogs.length > 0) {
+      gsap.fromTo(
+        blogsRef.current,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          stagger: 0.2,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: homeRef.current,
+            start: "top 80%",
+            end: "bottom 20%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+    }
+  }, [blogs]);
+
   // Function to handle search input changes
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -67,13 +76,13 @@ const Home = () => {
       blog.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Smooth scroll to blog section
   const scrollToHome = () => {
-    if (homeRef.current) {
-      homeRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
+    gsap.to(window, {
+      duration: 1,
+      scrollTo: homeRef.current,
+      ease: "power2.out",
+    });
   };
 
   if (loading) {
@@ -97,13 +106,13 @@ const Home = () => {
       <HeroSection scrollToHome={scrollToHome} />
 
       {/* Search Input */}
-      <div className=" relative p-6 text-center bg-white shadow-md text-black ">
+      <div className="relative p-6 text-center bg-white shadow-md text-black">
         <input
           type="text"
           placeholder="Search blogs..."
           value={searchQuery}
           onChange={handleSearch}
-          className="  w-2/3 sm:w-1/2 p-3 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-black"
+          className="w-2/3 sm:w-1/2 p-3 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-black"
         />
         <FaSearch className="absolute right-[370px] top-10 text-1xl" />
       </div>
@@ -115,9 +124,10 @@ const Home = () => {
 
         {filteredBlogs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBlogs.map((blog) => (
+            {filteredBlogs.map((blog, index) => (
               <div
                 key={blog._id}
+                ref={(el) => (blogsRef.current[index] = el)}
                 className="overflow-hidden rounded bg-white text-slate-500 shadow-md shadow-slate-200"
               >
                 <figure className="relative">
@@ -143,14 +153,6 @@ const Home = () => {
 
                 <div className="p-6">
                   <header className="mb-4 flex gap-4">
-                    {/* <img
-                      className=" rounded-full h-10 w-10 object-cover"
-                      src={`http://localhost:4000/${userdata.profilePic
-                        .split("\\")
-                        .pop()}`}
-                      alt={userdata.username}
-                    /> */}
-
                     <div>
                       <h3 className="text-xl font-medium text-slate-700">
                         {blog.title}
@@ -164,10 +166,8 @@ const Home = () => {
                   </header>
                   <p>{blog.content || "No content available"}</p>
                   <Link
-                    to={{
-                      pathname: `/fullblog/${blog._id}`,
-                    }}
-                    state={{ indvdata: blog }} // Pass `v` as state data
+                    to={`/fullblog/${blog._id}`}
+                    state={{ indvdata: blog }}
                   >
                     <button className="mt-4 py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">
                       Read More
